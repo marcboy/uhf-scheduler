@@ -2,11 +2,25 @@
 
 *a 6-kids effort*
 
-A standalone web application for scheduling arbitrary-future IPTV DVR recordings (manual date/time/duration, full 24-hour EPG grid, multi-day program search, and EPG-driven Auto-Record Rules) directly into **`uhf-server`** — removing the 24/48-hour guide horizon limit of the Apple TV UHF client while keeping native Apple TV playback and recording resilience.
+**UHF Scheduler** is a lightweight, self-hosted web app for scheduling arbitrary-future IPTV DVR recordings directly into **`uhf-server`** — removing the 24/48-hour guide limit of the Apple TV UHF app while keeping native Apple TV playback, stream recovery, and single-file recordings.
+
+---
+
+## What It Does
+
+- **Manual Scheduling (No Time Limit):** Pick any channel and schedule recordings days, weeks, or months ahead by duration or end time (including across midnight), with pre/post padding, DST-aware weekly repeats, and simultaneous-stream conflict warnings.
+- **Full 24-Hour EPG Grid & Multi-Day Program Search:** Browse a full `00:00`–`24:00` local-day guide across days, search upcoming broadcasts across your entire EPG (with mirror channels grouped cleanly per broadcast), and click any program to schedule in one click.
+- **Auto-Record Rules (Series Passes):** Pick a channel and program name (or search upcoming programs directly) to automatically schedule every matching airing whenever the EPG syncs daily. Includes accent/case-insensitive matching, automatic padding edge trimming on back-to-back episodes, and a checked-by-default **"Do not schedule on top of existing programming"** guard honoring your simultaneous stream limit.
+- **Multi-Source IPTV & XMLTV Support:** Connect one or more **Xtream Codes** or **M3U** playlists plus automatic provider EPG and/or custom 7–14 day `.xml`/`.xml.gz` XMLTV feeds (with automatic multi-source deduplication).
+- **Zero-Friction Setup & Updates:** Auto-detects `uhf-server` via LAN mDNS (`_uhf-server._tcp`) and localhost/Docker host probes, auto-detects Apple TV UHF `playlistID`s, and notifies you in-app when a new release is out.
+
+---
 
 ## 1-Command Install (Docker — Recommended)
 
-Prebuilt multi-architecture images (`linux/amd64` + `linux/arm64`) are published to `ghcr.io/marcboy/uhf-scheduler:latest`. All settings, channels, EPG data, and Auto-Record rules live in `./data/scheduler.db` and are preserved across updates.
+Prebuilt multi-architecture images (`linux/amd64` + `linux/arm64`) are published to `ghcr.io/marcboy/uhf-scheduler:latest` (works on Raspberry Pi, Linux servers/NAS, macOS, and Windows).
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) (with Docker Compose) and a running [`uhf-server`](https://github.com/swapplications/uhf-server-dist) instance.
 
 ### Linux / Raspberry Pi / macOS
 ```sh
@@ -18,25 +32,73 @@ curl -fsSL https://raw.githubusercontent.com/marcboy/uhf-scheduler/main/install.
 irm https://raw.githubusercontent.com/marcboy/uhf-scheduler/main/install.ps1 | iex
 ```
 
-### Updating Later
-Re-run the same install command above, or run the generated update script inside `~/uhf-scheduler`:
-```sh
-cd ~/uhf-scheduler && docker compose pull && docker compose up -d
+By default, UHF Scheduler runs on port **`8086`** (`http://localhost:8086` or `http://<lan-ip>:8086`) and stores all data in `~/uhf-scheduler/data`.
+
+### Custom Port or Install Directory (Optional)
+- **Linux / macOS:**
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/marcboy/uhf-scheduler/main/install.sh | UHF_SCHEDULER_PORT=9090 UHF_SCHEDULER_DIR=/opt/uhf-scheduler sh
+  ```
+- **Windows (PowerShell):**
+  ```powershell
+  $env:UHF_SCHEDULER_PORT="9090"; $env:UHF_SCHEDULER_DIR="C:\uhf-scheduler"; irm https://raw.githubusercontent.com/marcboy/uhf-scheduler/main/install.ps1 | iex
+  ```
+
+---
+
+## First-Time Setup
+
+1. Open **`http://localhost:8086`** (or `http://<your-server-ip>:8086` from any phone/tablet/computer on your LAN).
+2. Go to **Settings → UHF Server & Defaults**, click **Auto-Detect** (or enter your `uhf-server` URL and optional server password), click **Test UHF Connection**, and save.
+3. Under **Add IPTV Source**, enter your **Xtream Codes** login or **M3U** playlist URL (click **Auto-Detect** next to `playlistID` so recordings group cleanly in Apple TV UHF), save, and click **Sync Now**.
+4. *(Optional)* Under **EPG / XMLTV Sources**, sync your provider EPG and/or add any 7–14 day external XMLTV URL (`.xml` or `.xml.gz`).
+5. Start scheduling from **Manual Schedule**, **EPG Grid**, or **Auto-Record** — every recording appears natively in your Apple TV UHF app.
+
+---
+
+## Updating (Preserves All Settings & Auto-Record Rules)
+
+All settings, IPTV/EPG sources, favorites, hidden categories, **Auto-Record rules**, and rule history live in `./data/scheduler.db` (mounted as `/data`), while actual recordings live in `uhf-server`. Updating never touches your data.
+
+Run **any** of the following:
+- Re-run the 1-command install script above, **or**
+- Run the generated helper script inside your install folder (`~/uhf-scheduler/update.sh` on Linux/macOS or `~\uhf-scheduler\update.ps1` on Windows), **or**
+- Run directly with Docker Compose:
+  ```sh
+  cd ~/uhf-scheduler && docker compose pull && docker compose up -d
+  ```
+
+Optional hands-off updates are supported via [Watchtower](https://containrrr.dev/watchtower/) (`com.centurylinklabs.watchtower.enable=true` is preconfigured in the generated `docker-compose.yml`).
+
+---
+
+## Manual Docker Compose
+
+```yaml
+services:
+  uhf-scheduler:
+    image: ghcr.io/marcboy/uhf-scheduler:latest
+    container_name: uhf-scheduler
+    restart: unless-stopped
+    # On Linux / Raspberry Pi, host networking enables native mDNS discovery.
+    network_mode: host
+    # On macOS / Windows Docker Desktop, replace `network_mode: host` with:
+    # ports:
+    #   - "8086:8086"
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    environment:
+      - PORT=8086
+      - UHF_SCHEDULER_DATA_DIR=/data
+    volumes:
+      - ./data:/data
 ```
-All settings, IPTV sources, favorites, EPG feeds, and Auto-Record rules/history stored in `./data` are kept intact. Optional automatic updates are supported via Watchtower (`com.centurylinklabs.watchtower.enable=true`).
 
-## Features
-- **Arbitrary-future Manual Scheduling**: Pick any channel (with auto-saved last category & favorites filter), any future date/time, duration or end time (including across midnight), optional pre/post padding, DST-aware weekly recurrence, and simultaneous-stream overlap warnings.
-- **Full 24-Hour Interactive EPG Grid (Optional)**: Full `00:00`–`24:00` local-day timeline with day buttons, hour jump shortcuts, virtualized category/favorites rows, auto-saved last selected group, per-channel EPG ID overrides, live `uhf-server` timer overlays, and click-to-schedule modal prefill.
-- **Multi-Source EPG Deduplication & Multi-Day Program Search**: Supports automatic Xtream provider XMLTV plus custom 7–14 day `.xml` / `.xml.gz` XMLTV feeds parsed incrementally into SQLite; automatically prefers custom XMLTV feeds over short provider guides with fallback for uncovered channels, and provides fast upcoming program search with mirror-stream grouping and optional description matching.
-- **Auto-Record Rules (Series Passes)**: Pick a channel and/or search upcoming EPG programs directly in the **Auto-Record** tab (or 1-click inside the EPG Schedule modal) to automatically schedule every matching upcoming airing whenever the EPG refreshes in the background. Supports accent- and case-insensitive matching (`starts_with`, `contains`, `exact`), automatic padding edge trimming on back-to-back episodes, a checked-by-default **"Do not schedule on top of existing programming"** option respecting `Max Simultaneous Streams`, idempotent history (manually cancelled airings are not re-added), and 1-click **Force Schedule** overrides.
-- **UHF Server Auto-Detect**: Click **Auto-Detect** in Settings to discover `uhf-server` instances on your LAN via Zeroconf/mDNS (`_uhf-server._tcp.local.`), localhost ports (`8085` / `8000`), and Docker Desktop `host.docker.internal` probes.
-- **In-App Update Notifications**: Checks GitHub Releases periodically and notifies you in the header and Settings when a newer release is available.
-- **Recordings Management**: View scheduled, active, completed, and failed `uhf-server` recordings with progress, `error_code` diagnostics, safe edit-via-replace, recurrence-safe cancellation, and direct Watch/Download links to `uhf-server`.
+---
 
-## Local Development
+## Local Development & Native Linux Install
 
-### Backend
+### Backend (Python 3.12+ / FastAPI / SQLite)
 ```bash
 cd backend
 python -m venv .venv
@@ -45,12 +107,12 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8086
 ```
 
-### Frontend
+### Frontend (React / TypeScript / Vite)
 ```bash
 cd frontend
 npm install
 npm run dev       # proxies /api to http://127.0.0.1:8086
-npm run build     # builds static SPA to frontend/dist (served automatically by FastAPI)
+npm run build     # outputs static SPA to frontend/dist (served automatically by FastAPI)
 ```
 
 ### Tests
@@ -59,17 +121,5 @@ cd backend
 pytest -v
 ```
 
-## Manual Docker Compose
-```yaml
-services:
-  uhf-scheduler:
-    image: ghcr.io/marcboy/uhf-scheduler:latest
-    container_name: uhf-scheduler
-    restart: unless-stopped
-    network_mode: host # Linux/Pi (enables mDNS); use ports: ["8086:8086"] on macOS/Windows
-    volumes:
-      - ./data:/data
-```
-
-## Systemd User Service (Optional Native Linux Install)
-A template unit is included in `deploy/uhf-scheduler.service`. Copy it to `~/.config/systemd/user/uhf-scheduler.service` and enable via `systemctl --user enable --now uhf-scheduler.service`.
+### Native Systemd User Service (Linux)
+A systemd user unit template is included in [deploy/uhf-scheduler.service](deploy/uhf-scheduler.service). Copy it to `~/.config/systemd/user/uhf-scheduler.service` and run `systemctl --user daemon-reload && systemctl --user enable --now uhf-scheduler.service`.
