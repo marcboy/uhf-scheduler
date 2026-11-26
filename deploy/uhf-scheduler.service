@@ -1,0 +1,19 @@
+[Unit]
+Description=UHF Scheduler Web App
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/uhf-scheduler/backend
+Environment=PORT=8086
+Environment=UHF_SCHEDULER_DATA_DIR=%h/uhf-scheduler/data
+Environment=UHF_SCHEDULER_FRONTEND_DIR=%h/uhf-scheduler/frontend/dist
+ExecStart=%h/uhf-scheduler/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8086
+Restart=always
+RestartSec=5
+StandardOutput=append:%h/uhf-scheduler/uhf-scheduler.log
+StandardError=append:%h/uhf-scheduler/uhf-scheduler.log
+
+[Install]
+WantedBy=default.target
