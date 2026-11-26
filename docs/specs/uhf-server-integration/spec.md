@@ -64,8 +64,12 @@ The system SHALL display recordings retrieved from `uhf-server` grouped or filte
 - **THEN** the system provides a direct link to `uhf-server`'s recording stream or download interface without implementing an in-app video player
 
 ### Requirement: UHF server automatic network discovery
-The system SHALL provide on-demand discovery of `uhf-server` instances on the local network via Zeroconf/mDNS (`_uhf-server._tcp.local.`) and localhost port probes (`8085`, `8000`), verifying each candidate via `/auth/methods` and prioritizing LAN IPv4 addresses over container bridge interfaces.
+The system SHALL provide on-demand discovery of `uhf-server` instances on the local network via Zeroconf/mDNS (`_uhf-server._tcp.local.`), localhost port probes (`8085`, `8000`), and Docker host-gateway probes (`host.docker.internal:8085`, `host.docker.internal:8000`), verifying each candidate via `/auth/methods` and prioritizing LAN IPv4 addresses over container bridge interfaces.
 
 #### Scenario: Discover UHF server via mDNS and localhost probe
 - **WHEN** a user clicks Auto-Detect next to UHF Server URL in Settings
 - **THEN** the system scans `_uhf-server._tcp.local.` and probes localhost ports, verifies responding `uhf-server` instances, prefers LAN IPv4 addresses over `172.x` bridge interfaces, and presents clickable server choices with their password-required status
+
+#### Scenario: Discover host-running UHF server from Docker Desktop on macOS or Windows
+- **WHEN** `uhf-scheduler` runs inside a Docker container on macOS or Windows where `uhf-server` runs natively on the host
+- **THEN** Auto-Detect probes `http://host.docker.internal:8085` and `http://host.docker.internal:8000` via `/auth/methods` and surfaces the responding host `uhf-server` as a clickable choice

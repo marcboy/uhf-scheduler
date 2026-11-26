@@ -6,9 +6,14 @@ Build and distribute a standalone web application (`uhf-scheduler`, *"a 6-kids e
 ## STATUS
 - **Version:** v0.1.16
 - **Repo:** Public GitHub repo `https://github.com/marcboy/uhf-scheduler` (`main`)
-- **Docker image:** `ghcr.io/marcboy/uhf-scheduler:latest` (`linux/amd64`, `linux/arm64`)
+- **Docker image:** `ghcr.io/marcboy/uhf-scheduler:latest` (stable `vX.Y.Z` tags only) and `:edge` (in-progress `main` builds), multi-arch (`linux/amd64`, `linux/arm64`)
 - **Stack:** React + TypeScript (Vite) frontend, Python 3 + FastAPI + SQLite (WAL) backend (`24/24` pytest tests passing)
 - **Specs:** Synced under `docs/specs/`
+
+## RELEASE & DEVELOPMENT POLICY
+- **In-progress work on `main` NEVER ships to production:** pushing to `main` builds & pushes `ghcr.io/marcboy/uhf-scheduler:edge` only (does not update `:latest` or create a GitHub Release).
+- **Code version bumps during development are safe:** incrementing patch versions in `frontend/src/version.ts` + `backend/app/config.py` during ongoing work does not affect production users.
+- **Explicit production release:** ONLY pushing a stable git tag `vX.Y.Z` (`git tag vX.Y.Z && git push origin vX.Y.Z`) updates `:latest`, publishes `:X.Y.Z` / `:X.Y`, and creates the GitHub Release that triggers the in-app update badge. Prerelease tags (e.g. `v0.2.0-rc.1`) publish a `--prerelease` without overwriting `:latest`.
 
 ## KEY ARCHITECTURAL NOTES
 - `uhf-server` advertises itself via mDNS (`_uhf-server._tcp.local.`) and returns `id_token` from `/auth/password-login`.
