@@ -7,8 +7,8 @@ from pathlib import Path
 from platformdirs import user_data_dir
 
 APP_NAME = "uhf-scheduler"
-APP_VERSION = "0.1.15"
-BUILD_TIMESTAMP = "2026-11-25T16:23:00-08:00"
+APP_VERSION = "0.1.16"
+BUILD_TIMESTAMP = "2026-11-25T16:27:00-08:00"
 
 
 def get_data_dir() -> Path:

@@ -4,7 +4,7 @@
 Build and distribute a standalone web application (`uhf-scheduler`, *"a 6-kids effort"*) that schedules arbitrary-future manual, EPG-grid, and Auto-Record (series pass) IPTV DVR recordings directly into `uhf-server`, packaged as a multi-arch (`linux/amd64`, `linux/arm64`) Docker image with 1-command install/update scripts and persistent `/data` storage.
 
 ## STATUS
-- **Version:** v0.1.15
+- **Version:** v0.1.16
 - **Repo:** Public GitHub repo `https://github.com/marcboy/uhf-scheduler` (`main`)
 - **Docker image:** `ghcr.io/marcboy/uhf-scheduler:latest` (`linux/amd64`, `linux/arm64`)
 - **Stack:** React + TypeScript (Vite) frontend, Python 3 + FastAPI + SQLite (WAL) backend (`24/24` pytest tests passing)
